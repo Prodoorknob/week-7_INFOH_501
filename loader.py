@@ -4,6 +4,7 @@ Script to load geographical data into a pandas DataFrame, and save it as a CSV f
 
 from geopy.geocoders import Nominatim
 import pandas as pd
+import numpy as np
 
 
 def get_geolocator(agent='h501-student'):
@@ -18,16 +19,47 @@ def get_geolocator(agent='h501-student'):
     return Nominatim(user_agent=agent)
 
 def fetch_location_data(geolocator, loc):
-    location = geolocator.geocode(loc)
+    """
+    Fetch geographical data (latitude, longitude, and type) for a given location.
 
-    if location is None:
-        return None
-    
-    return {"location": loc, "latitude": location.latitude, "longitude": location.longitude, "type": location.geo_type}
+    """
+    try:
+        location = geolocator.geocode(loc, exactly_one=True, addressdetails=True)
+        if location is None:
+            return{
+                "location": location,
+                "latitude": np.nan, 
+                "longitude": np.nan,
+                "type": np.nan
+            }
+        raw = getattr(location, "raw", {}) or {}
+        geo_type = raw.get("type") or raw.get("class")
+        return{
+                "location": location,
+                "latitude": location.latitude, 
+                "longitude": location.longitude,
+                "type": geo_type
+            }
+    except Exception as E:
+        print(f"Error, location not found for {loc}:{E}")
+        return{
+                "location": location,
+                "latitude": np.nan, 
+                "longitude": np.nan,
+                "type": np.nan
+            }
 
-def build_geo_dataframe(locations):
-    geo_data = [fetch_location_data(geolocator, loc) for loc in locations]
+def build_geo_dataframe(geolocator, locations):
+    """
+    Build a pandas DataFrame with geographical data for a list of locations.
+
+    """
     
+    geo_data=[]
+
+    for loc in locations:
+        geo_data.append(fetch_location_data(geolocator, loc))
+
     return pd.DataFrame(geo_data)
 
 
@@ -36,6 +68,6 @@ if __name__ == "__main__":
 
     locations = ["Museum of Modern Art", "iuyt8765(*&)", "Alaska", "Franklin's Barbecue", "Burj Khalifa"]
 
-    df = build_geo_dataframe(locations)
+    df = build_geo_dataframe(geo, locations)
 
     df.to_csv("./geo_data.csv")

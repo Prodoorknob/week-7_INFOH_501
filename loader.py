@@ -6,6 +6,8 @@ from geopy.geocoders import Nominatim
 import pandas as pd
 import numpy as np
 
+timeout=30
+
 
 def get_geolocator(agent='h501-student'):
     """
@@ -24,10 +26,10 @@ def fetch_location_data(geolocator, loc):
 
     """
     try:
-        location = geolocator.geocode(loc, exactly_one=True, addressdetails=True)
+        location = geolocator.geocode(loc, exactly_one=True, addressdetails=True, timeout=timeout)
         if location is None:
             return{
-                "location": location,
+                "location": loc,
                 "latitude": np.nan, 
                 "longitude": np.nan,
                 "type": np.nan
@@ -35,7 +37,7 @@ def fetch_location_data(geolocator, loc):
         raw = getattr(location, "raw", {}) or {}
         geo_type = raw.get("type") or raw.get("class")
         return{
-                "location": location,
+                "location": loc,
                 "latitude": location.latitude, 
                 "longitude": location.longitude,
                 "type": geo_type
@@ -43,7 +45,7 @@ def fetch_location_data(geolocator, loc):
     except Exception as E:
         print(f"Error, location not found for {loc}:{E}")
         return{
-                "location": location,
+                "location": loc,
                 "latitude": np.nan, 
                 "longitude": np.nan,
                 "type": np.nan
